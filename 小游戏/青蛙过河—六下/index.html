@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>青蛙过河 - 背单词游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="score-board">
+            <div class="score">得分: <span id="score">0</span></div>
+            <div class="level">关卡: <span id="level">1</span></div>
+            <div class="lives">生命: <span id="lives">3</span></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="start-zone">
+                <div class="stone start-stone"></div>
+                <div class="frog" id="frog">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            
+            <div class="river">
+                <div class="lane" id="lane1"></div>
+                <div class="lane" id="lane2"></div>
+                <div class="lane" id="lane3"></div>
+            </div>
+            
+            <div class="end-zone">
+                <div class="stone end-stone"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">开始游戏</button>
+            <button id="pauseBtn">暂停</button>
+            <div class="instruction">敲击键盘上的字母，青蛙会跳到对应的荷叶上！</div>
+        </div>
+    </div>
+    
+    <script src="words.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

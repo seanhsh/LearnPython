@@ -1,0 +1,311 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game-container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 900px;
+    width: 100%;
+}
+
+.score-board {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.score-board div {
+    color: #333;
+}
+
+.game-area {
+    position: relative;
+    height: 500px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.start-zone {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(90deg, #8B4513 0%, #A0522D 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.end-zone {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(270deg, #8B4513 0%, #A0522D 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stone {
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle at 30% 30%, #a8a8a8, #666);
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    position: absolute;
+}
+
+.start-stone {
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.end-stone {
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.river {
+    position: absolute;
+    left: 100px;
+    right: 100px;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    display: flex;
+    flex-direction: column;
+}
+
+.lane {
+    flex: 1;
+    position: relative;
+    border-bottom: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.lane:last-child {
+    border-bottom: none;
+}
+
+.lily-pad {
+    position: absolute;
+    width: 120px;
+    height: 100px;
+    background: radial-gradient(ellipse at center, #4CAF50 0%, #2E7D32 100%);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s;
+    cursor: pointer;
+}
+
+.lily-pad:hover {
+    transform: scale(1.05);
+}
+
+.lily-pad.correct {
+    background: radial-gradient(ellipse at center, #FFD700 0%, #FFA500 100%);
+    animation: pulse 0.5s;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.frog {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at 30% 30%, #8BC34A, #4CAF50);
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.frog::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 10px;
+    width: 15px;
+    height: 20px;
+    background: #8BC34A;
+    border-radius: 50% 50% 0 0;
+}
+
+.frog::after {
+    content: '';
+    position: absolute;
+    top: -15px;
+    right: 10px;
+    width: 15px;
+    height: 20px;
+    background: #8BC34A;
+    border-radius: 50% 50% 0 0;
+}
+
+.frog .eyes {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.frog .eye {
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    position: relative;
+}
+
+.frog .eye::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 6px;
+    height: 6px;
+    background: black;
+    border-radius: 50%;
+}
+
+.frog .mouth {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 8px;
+    background: #2E7D32;
+    border-radius: 0 0 10px 10px;
+}
+
+.controls {
+    text-align: center;
+}
+
+.controls button {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    margin: 0 10px;
+    transition: all 0.3s;
+}
+
+#startBtn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+#startBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+#pauseBtn {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+#pauseBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+}
+
+.instruction {
+    margin-top: 20px;
+    color: #666;
+    font-size: 14px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+.game-over {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.game-over-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.game-over h2 {
+    color: #f5576c;
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.game-over p {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.game-over button {
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transition: all 0.3s;
+}
+
+.game-over button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
