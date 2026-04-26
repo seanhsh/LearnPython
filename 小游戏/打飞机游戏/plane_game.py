@@ -155,17 +155,17 @@ class Player:
         参数:
             keys: 键盘按键状态列表
         """
-        # 左移 (A键)
-        if keys[pygame.K_a] and self.x > 0:
+        # 左移 (左方向键)
+        if keys[pygame.K_LEFT] and self.x > 0:
             self.x -= self.vel
-        # 右移 (D键)
-        if keys[pygame.K_d] and self.x < WIDTH - self.width:
+        # 右移 (右方向键)
+        if keys[pygame.K_RIGHT] and self.x < WIDTH - self.width:
             self.x += self.vel
-        # 上移 (W键)
-        if keys[pygame.K_w] and self.y > 0:
+        # 上移 (上方向键)
+        if keys[pygame.K_UP] and self.y > 0:
             self.y -= self.vel
-        # 下移 (S键)
-        if keys[pygame.K_s] and self.y < HEIGHT - self.height:
+        # 下移 (下方向键)
+        if keys[pygame.K_DOWN] and self.y < HEIGHT - self.height:
             self.y += self.vel
     
     def shoot(self):
@@ -563,6 +563,10 @@ class Enemy:
         # 射击相关属性
         self.shoot_count = 0  # 射击计数器
         self.shoot_delay = 180 - level * 5  # 射击延迟，关卡越高延迟越短，但减少幅度降低，基础延迟增加
+        # 波浪移动相关属性
+        self.wave_offset = random.uniform(0, 2 * math.pi)
+        self.wave_speed = random.uniform(0.05, 0.15)
+        self.wave_amplitude = random.uniform(0.3, 0.8)
     
     def update(self):
         """
@@ -571,9 +575,19 @@ class Enemy:
         返回:
             list: 发射的子弹列表，如果没有射击则返回空列表
         """
-        # 移动
+        # 多样化移动
+        # 1. 基础移动
         self.x += self.vel_x
         self.y += self.vel_y
+        
+        # 2. 波浪移动效果
+        self.wave_offset += self.wave_speed
+        self.x += math.sin(self.wave_offset) * self.wave_amplitude
+        
+        # 3. 随机方向变化
+        if random.random() < 0.01:  # 1%概率改变水平速度
+            self.vel_x = random.uniform(-2, 2)
+        
         # 边界检测：碰到左右边界反弹
         if self.x <= 0 or self.x >= WIDTH - self.width:
             self.vel_x *= -1
