@@ -20,6 +20,7 @@ except:
 
 # 游戏窗口设置
 WIDTH, HEIGHT = 800, 600  # 窗口宽度和高度
+FULLSCREEN = False  # 初始全屏状态
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))  # 创建游戏窗口
 pygame.display.set_caption("Plane Game")  # Set window title
 
@@ -154,17 +155,17 @@ class Player:
         参数:
             keys: 键盘按键状态列表
         """
-        # 左移
-        if keys[pygame.K_LEFT] and self.x > 0:
+        # 左移 (A键)
+        if keys[pygame.K_a] and self.x > 0:
             self.x -= self.vel
-        # 右移
-        if keys[pygame.K_RIGHT] and self.x < WIDTH - self.width:
+        # 右移 (D键)
+        if keys[pygame.K_d] and self.x < WIDTH - self.width:
             self.x += self.vel
-        # 上移
-        if keys[pygame.K_UP] and self.y > 0:
+        # 上移 (W键)
+        if keys[pygame.K_w] and self.y > 0:
             self.y -= self.vel
-        # 下移
-        if keys[pygame.K_DOWN] and self.y < HEIGHT - self.height:
+        # 下移 (S键)
+        if keys[pygame.K_s] and self.y < HEIGHT - self.height:
             self.y += self.vel
     
     def shoot(self):
@@ -526,18 +527,25 @@ class Enemy:
             self.vel_y = 0.6 + level * 0.2  # 其他关卡的小飞机下降速度，每关增加0.2
         self.health = 2 + level * 1  # 生命值：关卡越高，生命值越多，每关增加1
         self.max_health = 2 + level * 1  # 最大生命值
-        # 随机选择飞机类型和颜色
-        plane_types = ["red", "orange", "blue", "green", "purple"]
+        # 根据关卡选择飞机类型
+        if level == 1:
+            plane_types = ["red"]  # 第一关只有红色飞机
+        elif level == 2:
+            plane_types = ["red", "orange"]  # 第二关添加橙色飞机
+        else:
+            plane_types = ["red", "orange", "blue", "green", "purple"]  # 第三关及以后添加其他颜色
         self.plane_type = random.choice(plane_types)
         
         # 根据飞机类型设置颜色和行为
         if self.plane_type == "red":
             self.color = RED  # 红色飞机
             self.can_shoot = False  # 红色飞机不发射子弹
+            self.score = 10  # 红色飞机得分
         elif self.plane_type == "orange":
             self.color = ORANGE  # 橙色飞机
-            self.can_shoot = level >= 2  # 从第二关开始可以射击
+            self.can_shoot = True  # 橙色飞机可以射击
             self.tracking_bullets = False  # 橙色飞机发射普通子弹
+            self.score = 20  # 橙色飞机得分
         else:
             # 其他颜色飞机（蓝色、绿色、紫色）
             if self.plane_type == "blue":
@@ -546,8 +554,9 @@ class Enemy:
                 self.color = GREEN
             else:  # purple
                 self.color = (128, 0, 128)
-            self.can_shoot = level >= 2  # 从第二关开始可以射击
+            self.can_shoot = True  # 其他颜色飞机可以射击
             self.tracking_bullets = True  # 其他颜色飞机发射跟踪子弹
+            self.score = 30  # 其他颜色飞机得分
         
         self.drop_item = random.random() < 0.6  # 物品掉落概率（从30%增加到60%）
         self.hit_timer = 0  # 被击中计时器
@@ -678,6 +687,7 @@ class Boss:
             self.shoot_count = 0  # 射击计数器
             self.shoot_delay = 30  # 射击延迟（帧）
             self.hit_timer = 0  # 被击中计时器
+            self.score = 500  # BOSS得分
         elif level == 2:
             # 第二关boss
             self.width = 120  # 宽度
@@ -692,6 +702,7 @@ class Boss:
             self.shoot_count = 0  # 射击计数器
             self.shoot_delay = 25  # 射击延迟（帧）
             self.hit_timer = 0  # 被击中计时器
+            self.score = 750  # BOSS得分
         elif level == 3:
             # 第三关boss（最终boss）
             self.width = 150  # 宽度
@@ -706,6 +717,7 @@ class Boss:
             self.shoot_count = 0  # 射击计数器
             self.shoot_delay = 20  # 射击延迟（帧）
             self.hit_timer = 0  # 被击中计时器
+            self.score = 1000  # BOSS得分
         else:
             # 处理level大于3的情况
             self.width = 150 + (level - 3) * 20  # 宽度随关卡增加
@@ -720,6 +732,7 @@ class Boss:
             self.shoot_count = 0  # 射击计数器
             self.shoot_delay = max(10, 20 - (level - 3) * 2)  # 射击延迟随关卡减少
             self.hit_timer = 0  # 被击中计时器
+            self.score = 1000 + (level - 3) * 250  # BOSS得分随关卡增加
     
     def update(self):
         """
@@ -983,8 +996,8 @@ class Explosion:
         # 初始化烟花粒子
         self.particles = []
         # 导弹爆炸粒子数量更多
-        particle_count = 80 if is_missile else 40
-        for _ in range(particle_count):  # 40或80个粒子（增加粒子数量使烟花更密集）
+        particle_count = 120 if is_missile else 60
+        for _ in range(particle_count):  # 60或120个粒子（大幅增加粒子数量使烟花更密集）
             angle = random.uniform(0, 2 * math.pi)
             # 导弹爆炸速度更快
             speed = random.uniform(3, 8) if is_missile else random.uniform(2, 5)
@@ -1011,7 +1024,7 @@ class Explosion:
         # 初始化烟雾粒子
         self.smoke_particles = []
         if is_missile:
-            for _ in range(30):  # 导弹爆炸产生更多烟雾
+            for _ in range(50):  # 导弹爆炸产生更多烟雾
                 smoke_angle = random.uniform(0, 2 * math.pi)
                 smoke_speed = random.uniform(1, 3)
                 # 烟雾颜色
@@ -1127,6 +1140,7 @@ class Bomb:
         self.radius = 0  # 当前爆炸半径
         self.max_radius = 150  # 最大爆炸半径
         self.expanding = True  # 是否正在扩展
+        self.explosion = Explosion(x, y, 80, is_missile=True)  # 添加烟花爆炸效果
     
     def update(self):
         """
@@ -1135,12 +1149,14 @@ class Bomb:
         返回:
             bool: 爆炸是否结束
         """
+        # 更新烟花爆炸效果
+        explosion_done = self.explosion.update()
         if self.expanding:
             self.radius += 10  # 增加爆炸半径
             if self.radius >= self.max_radius:
                 self.expanding = False
-                return True  # 爆炸结束
-        return False  # 爆炸未结束
+                return explosion_done  # 爆炸结束
+        return explosion_done  # 爆炸未结束
     
     def draw(self, win):
         """
@@ -1149,16 +1165,20 @@ class Bomb:
         参数:
             win: 游戏窗口表面
         """
-        # 增强炸弹视觉效果
-        pygame.draw.circle(win, YELLOW, (self.x, self.y), self.radius, 3)  # 外层
-        pygame.draw.circle(win, ORANGE, (self.x, self.y), self.radius // 2, 3)  # 中层
-        pygame.draw.circle(win, RED, (self.x, self.y), self.radius // 4, 3)  # 内层
-        # 添加爆炸光芒效果
-        for i in range(8):
-            angle = math.pi * 2 * i / 8
-            x = self.x + math.cos(angle) * self.radius
-            y = self.y + math.sin(angle) * self.radius
-            pygame.draw.line(win, YELLOW, (self.x, self.y), (x, y), 2)
+        # 绘制烟花爆炸效果
+        self.explosion.draw(win)
+        # 保留原有的圆形爆炸视觉效果
+        if self.expanding:
+            # 增强炸弹视觉效果
+            pygame.draw.circle(win, YELLOW, (self.x, self.y), self.radius, 3)  # 外层
+            pygame.draw.circle(win, ORANGE, (self.x, self.y), self.radius // 2, 3)  # 中层
+            pygame.draw.circle(win, RED, (self.x, self.y), self.radius // 4, 3)  # 内层
+            # 添加爆炸光芒效果
+            for i in range(8):
+                angle = math.pi * 2 * i / 8
+                x = self.x + math.cos(angle) * self.radius
+                y = self.y + math.sin(angle) * self.radius
+                pygame.draw.line(win, YELLOW, (self.x, self.y), (x, y), 2)
 
 class Game:
     """
@@ -1323,6 +1343,20 @@ class Game:
         self.high_score = self.load_high_score()
         self.new_high_score = False  # 是否创造了新的最高分数
         
+        # 升级系统
+        self.level_up_score = 100  # 每100分升一级
+        self.last_level_up_score = 0  # 上次升级时的分数
+        
+        # 屏幕震动效果
+        self.screen_shake_timer = 0  # 屏幕震动计时器
+        self.screen_shake_intensity = 0  # 屏幕震动强度
+        
+        # 连续击杀效果
+        self.kill_streak = 0  # 连续击杀数
+        self.kill_streak_timer = 0  # 连续击杀计时器
+        self.kill_streak_timeout = 2000  # 连续击杀超时时间（毫秒）
+        self.last_kill_time = 0  # 上次击杀时间
+        
         # 帧率计数器
         self.fps_counter = 0
         self.fps_timer = 0
@@ -1435,136 +1469,166 @@ class Game:
             WIN.blit(win3, (420, 500))
         else:
             # 游戏主界面
-            self.player.draw(WIN)
-        for bullet in self.player.bullets:
-            bullet.draw(WIN)
-        for missile in self.player.missiles:
-            missile.draw(WIN)
-        
-        for enemy in self.enemies:
-            enemy.draw(WIN)
-        
-        for bullet in self.enemy_bullets:
-            bullet.draw(WIN)
-        
-        for item in self.items:
-            item.draw(WIN)
-        
-        for explosion in self.explosions:
-            explosion.draw(WIN)
-        
-        for bomb in self.bombs:
-            bomb.draw(WIN)
-        
-        if self.boss:
-            self.boss.draw(WIN)
-        
-        score_text = self.font.render(f"Score: {self.player.score}", True, WHITE)
-        health_text = self.font.render(f"Health: {self.player.health}", True, WHITE)
-        bomb_text = self.font.render(f"Bombs: {self.player.bomb_count}", True, WHITE)
-        missile_text = self.font.render(f"Missiles: {self.player.missile_count}", True, WHITE)
-        
-        level_text = self.font.render(f"Level: {self.level}", True, WHITE)
-        
-        enemies_left_text = self.font.render(f"Enemies left: {len(self.enemies)}", True, WHITE)
-        # Map bullet types to English names
-        bullet_type_map = {"normal": "Single", "double": "Double", "triple": "Triple", "powerful": "Powerful"}
-        bullet_type_en = bullet_type_map.get(self.player.bullet_type, self.player.bullet_type)
-        bullet_type_text = self.font.render(f"Weapon: {bullet_type_en}", True, WHITE)
-        
-        # 计算每种子弹类型的伤害
-        normal_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("normal", 0) - 1)) if self.player.bullet_upgrade_count.get("normal", 0) > 0 else 1
-        double_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("double", 0) - 1)) if self.player.bullet_upgrade_count.get("double", 0) > 0 else 1
-        triple_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("triple", 0) - 1)) if self.player.bullet_upgrade_count.get("triple", 0) > 0 else 1
-        
-        # 右下角子弹类型选择和伤害显示
-        # 只有当玩家获得了相应的子弹技能时，才显示该子弹类型
-        bullet_y_offset = 0
-        
-        # 将血量显示为血量条在屏幕左侧
-        # 确保血量的上限是1000
-        max_health = 1000
-        
-        # 绘制血量条背景
-        health_bar_width = 200
-        health_bar_height = 15
-        pygame.draw.rect(WIN, (50, 50, 50), (10, 10, health_bar_width, health_bar_height))
-        
-        # 绘制血量条
-        health_ratio = min(self.player.health / max_health, 1)
-        if health_ratio > 0.5:
-            health_color = (0, 255, 0)  # 绿色
-        elif health_ratio > 0.25:
-            health_color = (255, 255, 0)  # 黄色
-        else:
-            health_color = (255, 0, 0)  # 红色
-        pygame.draw.rect(WIN, health_color, (10, 10, int(health_bar_width * health_ratio), health_bar_height))
-        
-        # 绘制血量文本
-        health_text = self.font.render(f"生命: {self.player.health}/{max_health}", True, WHITE)
-        WIN.blit(health_text, (10, 30))
-        
-        # 将各种数量显示在下方，位置再往下调一些
-        bottom_offset = 0
-        WIN.blit(score_text, (10, HEIGHT - 120 + bottom_offset))
-        high_score_display = self.font.render(f"High Score: {self.high_score}", True, WHITE)
-        WIN.blit(high_score_display, (10, HEIGHT - 90 + bottom_offset))
-        WIN.blit(bomb_text, (10, HEIGHT - 60 + bottom_offset))
-        WIN.blit(missile_text, (10, HEIGHT - 30 + bottom_offset))
-        
-        # 只保留关卡显示在右上方
-        WIN.blit(level_text, (WIDTH - 100, 10))
-        
-        # 显示当前帧率
-        fps_text = self.font.render(f"FPS: {self.current_fps}", True, WHITE)
-        WIN.blit(fps_text, (WIDTH - 100, 30))
-        
-        # 绘制右下角子弹类型选择
-        # 1. 单发子弹：初始就有
-        bullet_select_text1 = self.font.render(f"1: Single ({normal_damage} damage)", True, WHITE if self.player.bullet_type != "normal" else YELLOW)
-        WIN.blit(bullet_select_text1, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
-        
-        # 2. 双发子弹：只有当玩家获得时才显示
-        if self.player.bullet_upgrade_count.get("double", 0) > 0:
-            bullet_y_offset += 30
-            bullet_select_text2 = self.font.render(f"2: Double ({double_damage} damage)", True, WHITE if self.player.bullet_type != "double" else YELLOW)
-            WIN.blit(bullet_select_text2, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
-        
-        # 3. 三发子弹：只有当玩家获得时才显示
-        if self.player.bullet_upgrade_count.get("triple", 0) > 0:
-            bullet_y_offset += 30
-            bullet_select_text3 = self.font.render(f"3: Triple ({triple_damage} damage)", True, WHITE if self.player.bullet_type != "triple" else YELLOW)
-            WIN.blit(bullet_select_text3, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
-        
-        if self.game_over:
-            # 检查是否创造了新的最高分数
-            if self.player.score > self.high_score:
-                self.high_score = self.player.score
-                self.save_high_score(self.high_score)
-                self.new_high_score = True
+            # 先绘制所有游戏元素到临时表面，然后应用屏幕震动
+            temp_surface = pygame.Surface((WIDTH, HEIGHT))
+            temp_surface.fill((0, 0, 0))
             
-            game_over_text = self.font.render("Game Over!", True, WHITE)
-            restart_text = self.font.render("Press R to restart", True, WHITE)
-            level_text = self.font.render(f"Level: {self.level}", True, WHITE)
+            # 直接绘制游戏元素，不绘制背景装饰
+            
+            self.player.draw(temp_surface)
+            for bullet in self.player.bullets:
+                bullet.draw(temp_surface)
+            for missile in self.player.missiles:
+                missile.draw(temp_surface)
+            
+            for enemy in self.enemies:
+                enemy.draw(temp_surface)
+            
+            for bullet in self.enemy_bullets:
+                bullet.draw(temp_surface)
+            
+            for item in self.items:
+                item.draw(temp_surface)
+            
+            for explosion in self.explosions:
+                explosion.draw(temp_surface)
+            
+            for bomb in self.bombs:
+                bomb.draw(temp_surface)
+            
+            if self.boss:
+                self.boss.draw(temp_surface)
+            
+            # 应用屏幕震动效果并绘制到主窗口
+            shake_offset_x = 0
+            shake_offset_y = 0
+            if self.screen_shake_timer > 0:
+                import random
+                shake_offset_x = random.randint(-self.screen_shake_intensity, self.screen_shake_intensity)
+                shake_offset_y = random.randint(-self.screen_shake_intensity, self.screen_shake_intensity)
+            
+            # 绘制UI元素到临时表面
             score_text = self.font.render(f"Score: {self.player.score}", True, WHITE)
-            enemies_destroyed_text = self.font.render(f"Enemies destroyed: {self.enemies_destroyed}", True, WHITE)
-            high_score_text = self.font.render(f"High Score: {self.high_score}", True, WHITE)
+            health_text = self.font.render(f"Health: {self.player.health}", True, WHITE)
+            bomb_text = self.font.render(f"Bombs: {self.player.bomb_count}", True, WHITE)
+            missile_text = self.font.render(f"Missiles: {self.player.missile_count}", True, WHITE)
+            level_text = self.font.render(f"Level: {self.level}", True, WHITE)
             
-            WIN.blit(game_over_text, (WIDTH//2 - 70, HEIGHT//2 - 120))
-            WIN.blit(level_text, (WIDTH//2 - 50, HEIGHT//2 - 80))
-            WIN.blit(score_text, (WIDTH//2 - 60, HEIGHT//2 - 40))
-            WIN.blit(high_score_text, (WIDTH//2 - 70, HEIGHT//2))
-            WIN.blit(enemies_destroyed_text, (WIDTH//2 - 80, HEIGHT//2 + 40))
-            WIN.blit(restart_text, (WIDTH//2 - 100, HEIGHT//2 + 80))
+            # 计算每种子弹类型的伤害
+            normal_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("normal", 0) - 1)) if self.player.bullet_upgrade_count.get("normal", 0) > 0 else 1
+            double_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("double", 0) - 1)) if self.player.bullet_upgrade_count.get("double", 0) > 0 else 1
+            triple_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("triple", 0) - 1)) if self.player.bullet_upgrade_count.get("triple", 0) > 0 else 1
             
-            # 显示新纪录消息
-            if self.new_high_score:
-                new_record_text = self.font.render("New High Score!", True, YELLOW)
-                WIN.blit(new_record_text, (WIDTH//2 - 80, HEIGHT//2 - 160))
-        
-        if self.level_message_timer > 0:
-            level_text = self.font.render(self.level_message, True, YELLOW)
-            WIN.blit(level_text, (WIDTH//2 - level_text.get_width()//2, HEIGHT//2 - 30))
+            # 右下角子弹类型选择和伤害显示
+            bullet_y_offset = 0
+            
+            # 绘制血量条背景
+            max_health = 1000
+            health_bar_width = 200
+            health_bar_height = 15
+            pygame.draw.rect(temp_surface, (50, 50, 50), (10, 10, health_bar_width, health_bar_height))
+            
+            # 绘制血量条
+            health_ratio = min(self.player.health / max_health, 1)
+            if health_ratio > 0.5:
+                health_color = (0, 255, 0)
+            elif health_ratio > 0.25:
+                health_color = (255, 255, 0)
+            else:
+                health_color = (255, 0, 0)
+            pygame.draw.rect(temp_surface, health_color, (10, 10, int(health_bar_width * health_ratio), health_bar_height))
+            
+            # 绘制血量文本
+            health_text_display = self.font.render(f"Health: {self.player.health}/{max_health}", True, WHITE)
+            temp_surface.blit(health_text_display, (10, 30))
+            
+            # 绘制分数等信息
+            bottom_offset = 0
+            temp_surface.blit(score_text, (10, HEIGHT - 120 + bottom_offset))
+            high_score_display = self.font.render(f"High Score: {self.high_score}", True, WHITE)
+            temp_surface.blit(high_score_display, (10, HEIGHT - 90 + bottom_offset))
+            temp_surface.blit(bomb_text, (10, HEIGHT - 60 + bottom_offset))
+            temp_surface.blit(missile_text, (10, HEIGHT - 30 + bottom_offset))
+            
+            # 绘制关卡在右上方
+            temp_surface.blit(level_text, (WIDTH - 100, 10))
+            
+            # 绘制当前帧率
+            fps_text = self.font.render(f"FPS: {self.current_fps}", True, WHITE)
+            temp_surface.blit(fps_text, (WIDTH - 100, 30))
+            
+            # 绘制右下角子弹类型选择
+            bullet_type_map = {"normal": "Single", "double": "Double", "triple": "Triple", "powerful": "Powerful", "five_way": "Five-Way"}
+            bullet_type_en = bullet_type_map.get(self.player.bullet_type, self.player.bullet_type)
+            
+            bullet_select_text1 = self.font.render(f"1: Single ({normal_damage} damage)", True, WHITE if self.player.bullet_type != "normal" else YELLOW)
+            temp_surface.blit(bullet_select_text1, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
+            
+            if self.player.bullet_upgrade_count.get("double", 0) > 0:
+                bullet_y_offset += 30
+                bullet_select_text2 = self.font.render(f"2: Double ({double_damage} damage)", True, WHITE if self.player.bullet_type != "double" else YELLOW)
+                temp_surface.blit(bullet_select_text2, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
+            
+            if self.player.bullet_upgrade_count.get("triple", 0) > 0:
+                bullet_y_offset += 30
+                bullet_select_text3 = self.font.render(f"3: Triple ({triple_damage} damage)", True, WHITE if self.player.bullet_type != "triple" else YELLOW)
+                temp_surface.blit(bullet_select_text3, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
+            
+            if self.player.bullet_upgrade_count.get("five_way", 0) > 0:
+                bullet_y_offset += 30
+                five_way_damage = 1 * (2 ** (self.player.bullet_upgrade_count.get("five_way", 0) - 1)) if self.player.bullet_upgrade_count.get("five_way", 0) > 0 else 1
+                bullet_select_text5 = self.font.render(f"5: Five-Way ({five_way_damage} damage)", True, WHITE if self.player.bullet_type != "five_way" else YELLOW)
+                temp_surface.blit(bullet_select_text5, (WIDTH - 200, HEIGHT - 100 + bullet_y_offset))
+            
+            # 将临时表面绘制到主窗口
+            WIN.blit(temp_surface, (shake_offset_x, shake_offset_y))
+            
+            # 绘制Game Over界面
+            if self.game_over:
+                # 检查是否创造了新的最高分数
+                if self.player.score > self.high_score:
+                    self.high_score = self.player.score
+                    self.save_high_score(self.high_score)
+                    self.new_high_score = True
+                
+                game_over_text = self.font.render("Game Over!", True, WHITE)
+                restart_text = self.font.render("Press R to restart", True, WHITE)
+                level_text = self.font.render(f"Level: {self.level}", True, WHITE)
+                score_text = self.font.render(f"Score: {self.player.score}", True, WHITE)
+                enemies_destroyed_text = self.font.render(f"Enemies destroyed: {self.enemies_destroyed}", True, WHITE)
+                high_score_text = self.font.render(f"High Score: {self.high_score}", True, WHITE)
+                
+                WIN.blit(game_over_text, (WIDTH//2 - 70, HEIGHT//2 - 120))
+                WIN.blit(level_text, (WIDTH//2 - 50, HEIGHT//2 - 80))
+                WIN.blit(score_text, (WIDTH//2 - 60, HEIGHT//2 - 40))
+                WIN.blit(high_score_text, (WIDTH//2 - 70, HEIGHT//2))
+                WIN.blit(enemies_destroyed_text, (WIDTH//2 - 80, HEIGHT//2 + 40))
+                WIN.blit(restart_text, (WIDTH//2 - 100, HEIGHT//2 + 80))
+                
+                # 显示新纪录消息
+                if self.new_high_score:
+                    new_record_text = self.font.render("New High Score!", True, YELLOW)
+                    WIN.blit(new_record_text, (WIDTH//2 - 80, HEIGHT//2 - 160))
+            
+            # 绘制关卡消息
+            if self.level_message_timer > 0:
+                level_message_text = self.font.render(self.level_message, True, YELLOW)
+                WIN.blit(level_message_text, (WIDTH//2 - level_message_text.get_width()//2, HEIGHT//2 - 30))
+            
+            # 绘制连续击杀效果（不受震动影响）
+            if self.kill_streak > 1:
+                # 根据连续击杀数量调整字体大小
+                font_size = 36 + min(self.kill_streak * 4, 50)
+                kill_font = pygame.font.Font(None, font_size)
+                kill_text = kill_font.render(f"{self.kill_streak} Kill Streak!", True, YELLOW)
+                # 添加白色描边效果
+                kill_text_outline = kill_font.render(f"{self.kill_streak} Kill Streak!", True, WHITE)
+                # 绘制在屏幕中央偏上位置
+                WIN.blit(kill_text_outline, (WIDTH//2 - kill_text.get_width()//2 - 2, HEIGHT//4 - 2))
+                WIN.blit(kill_text_outline, (WIDTH//2 - kill_text.get_width()//2 + 2, HEIGHT//4 - 2))
+                WIN.blit(kill_text_outline, (WIDTH//2 - kill_text.get_width()//2 - 2, HEIGHT//4 + 2))
+                WIN.blit(kill_text_outline, (WIDTH//2 - kill_text.get_width()//2 + 2, HEIGHT//4 + 2))
+                WIN.blit(kill_text, (WIDTH//2 - kill_text.get_width()//2, HEIGHT//4))
         
         pygame.display.update()
     
@@ -1576,6 +1640,16 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN:
+                # 全屏切换（F11键）
+                if event.key == pygame.K_F11:
+                    global FULLSCREEN, WIN
+                    FULLSCREEN = not FULLSCREEN
+                    if FULLSCREEN:
+                        WIN = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+                    else:
+                        WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+                    print(f"切换到{'全屏' if FULLSCREEN else '窗口'}模式")
+                
                 if self.show_instructions:
                     # 按任意键开始游戏
                     print("开始游戏")
@@ -1794,9 +1868,27 @@ class Game:
                         if enemy.health <= 0:
                             self.enemies.remove(enemy)
                             enemy_removed = True
-                            self.player.score += 10
+                            self.player.score += enemy.score  # 使用飞机的得分属性
                             self.enemies_destroyed += 1
                             self.explosions.append(Explosion(enemy.x + enemy.width//2, enemy.y + enemy.height//2, 30))
+                            
+                            # 连续击杀逻辑
+                            current_time = pygame.time.get_ticks()
+                            if current_time - self.last_kill_time < self.kill_streak_timeout:
+                                self.kill_streak += 1
+                            else:
+                                self.kill_streak = 1
+                            self.last_kill_time = current_time
+                            
+                            # 升级系统：每1000分升一级
+                            if self.player.score >= self.last_level_up_score + self.level_up_score:
+                                self.last_level_up_score += self.level_up_score
+                                self.level += 1
+                                self.level_message = f"Level Up! Current Level: {self.level}"
+                                self.level_message_timer = 120
+                                self.screen_shake_timer = 30
+                                self.screen_shake_intensity = 5
+                            
                             if enemy.drop_item:
                                 # 在有boss存在时，提高医疗包的掉落率
                                 if self.boss:
@@ -1831,9 +1923,27 @@ class Game:
                                         self.enemies.remove(e)
                                         if e == enemy:
                                             enemy_removed = True
-                                        self.player.score += 10
+                                        self.player.score += e.score  # 使用飞机的得分属性
                                         self.enemies_destroyed += 1
                                         self.explosions.append(Explosion(e.x + e.width//2, e.y + e.height//2, 30))
+                                        
+                                        # 连续击杀逻辑
+                                        current_time = pygame.time.get_ticks()
+                                        if current_time - self.last_kill_time < self.kill_streak_timeout:
+                                            self.kill_streak += 1
+                                        else:
+                                            self.kill_streak = 1
+                                        self.last_kill_time = current_time
+                                        
+                                        # 升级系统：每100分升一级
+                                        if self.player.score >= self.last_level_up_score + self.level_up_score:
+                                            self.last_level_up_score += self.level_up_score
+                                            self.level += 1
+                                            self.level_message = f"Level Up! Current Level: {self.level}"
+                                            self.level_message_timer = 120
+                                            self.screen_shake_timer = 30
+                                            self.screen_shake_intensity = 5
+                                        
                                         if e.drop_item:
                                             # 在有boss存在时，提高医疗包的掉落率
                                             if self.boss:
@@ -1852,6 +1962,9 @@ class Game:
                                     self.boss.health -= missile.explosion_damage
                                     self.boss.hit()
                                     if self.boss.health <= 0:
+                                        # 增加BOSS得分
+                                        self.player.score += self.boss.score
+                                        self.enemies_destroyed += 1
                                         self.explosions.append(Explosion(self.boss.x + self.boss.width//2, self.boss.y + self.boss.height//2, 60))
                                         # Boss死亡时掉落一堆物资
                                         boss_x = self.boss.x + self.boss.width//2
@@ -1997,6 +2110,15 @@ class Game:
             if explosion.update():
                 self.explosions.remove(explosion)
         
+        # 更新屏幕震动效果
+        if self.screen_shake_timer > 0:
+            self.screen_shake_timer -= 1
+        
+        # 更新连续击杀计时器
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_kill_time > self.kill_streak_timeout:
+            self.kill_streak = 0
+        
         for bomb in self.bombs[:]:
             if bomb.update():
                 self.bombs.remove(bomb)
@@ -2008,9 +2130,35 @@ class Game:
                     distance = math.sqrt(dx*dx + dy*dy)
                     if distance < bomb.radius:
                         self.enemies.remove(enemy)
-                        self.player.score += 10
+                        self.player.score += enemy.score  # 使用飞机的得分属性
                         self.enemies_destroyed += 1
                         self.explosions.append(Explosion(enemy.x + enemy.width//2, enemy.y + enemy.height//2, 30))
+                        
+                        # 连续击杀逻辑
+                        current_time = pygame.time.get_ticks()
+                        if current_time - self.last_kill_time < self.kill_streak_timeout:
+                            self.kill_streak += 1
+                        else:
+                            self.kill_streak = 1
+                        self.last_kill_time = current_time
+                        
+                        # 升级系统：每1000分升一级
+                        if self.player.score >= self.last_level_up_score + self.level_up_score:
+                            self.last_level_up_score += self.level_up_score
+                            self.level += 1
+                            self.level_message = f"Level Up! Current Level: {self.level}"
+                            self.level_message_timer = 120
+                            self.screen_shake_timer = 30
+                            self.screen_shake_intensity = 5
+                        
+                        if enemy.drop_item:
+                            # 在有boss存在时，提高医疗包的掉落率
+                            if self.boss:
+                                item_type = random.choice(["bomb", "bullet_double", "bullet_triple", "bullet_powerful", "bullet_five_way", "shield", "medkit", "medkit"])
+                            else:
+                                # 增加子弹升级物品的掉落概率
+                                item_type = random.choice(["bomb", "bullet_double", "bullet_double", "bullet_triple", "bullet_triple", "bullet_powerful", "bullet_five_way", "shield", "medkit"])
+                            self.items.append(Item(enemy.x + enemy.width//2, enemy.y + enemy.height//2, item_type, self.level))
                 
                 # 炸弹对boss造成伤害
                 if self.boss:
@@ -2021,7 +2169,18 @@ class Game:
                         self.boss.health -= 5
                         self.boss.hit()
                         if self.boss.health <= 0:
+                            # 增加BOSS得分
+                            self.player.score += self.boss.score
+                            self.enemies_destroyed += 1
                             self.explosions.append(Explosion(self.boss.x + self.boss.width//2, self.boss.y + self.boss.height//2, 60))
+                            # Boss死亡时掉落一堆物资
+                            boss_x = self.boss.x + self.boss.width//2
+                            boss_y = self.boss.y + self.boss.height//2
+                            # 掉落多种物资
+                            drop_items = ["bomb", "missile", "bullet_double", "bullet_triple", "shield", "medkit"]
+                            for i in range(8):  # 掉落8个物品
+                                item_type = random.choice(drop_items)
+                                self.items.append(Item(boss_x + random.randint(-30, 30), boss_y + random.randint(-30, 30), item_type, self.level))
                             self.boss = None
                             self.boss_defeated = True
         
