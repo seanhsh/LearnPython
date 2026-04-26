@@ -575,22 +575,9 @@ class Enemy:
         返回:
             list: 发射的子弹列表，如果没有射击则返回空列表
         """
-        # 多样化移动
-        # 1. 基础移动
-        self.x += self.vel_x
+        # 直线移动 - 只向下移动，不左右移动
         self.y += self.vel_y
         
-        # 2. 波浪移动效果
-        self.wave_offset += self.wave_speed
-        self.x += math.sin(self.wave_offset) * self.wave_amplitude
-        
-        # 3. 随机方向变化
-        if random.random() < 0.01:  # 1%概率改变水平速度
-            self.vel_x = random.uniform(-2, 2)
-        
-        # 边界检测：碰到左右边界反弹
-        if self.x <= 0 or self.x >= WIDTH - self.width:
-            self.vel_x *= -1
         # 减少被击中计时器
         if self.hit_timer > 0:
             self.hit_timer -= 1
@@ -865,18 +852,21 @@ class EnemyBullet:
         self.tracking_delay = 3  # 跟踪延迟，每3帧更新一次方向
         self.tracking_counter = 0  # 跟踪计数器
     
-    def update(self):
+    def update(self, player):
         """
         更新敌人子弹位置
+        
+        参数:
+            player: 玩家对象，用于跟踪子弹
         """
         if self.tracking:
             # 跟踪子弹：每几帧更新一次方向，追踪玩家
             self.tracking_counter += 1
             if self.tracking_counter >= self.tracking_delay:
                 self.tracking_counter = 0
-                # 假设玩家在屏幕底部中央附近
-                player_x = WIDTH // 2
-                player_y = HEIGHT - 100
+                # 计算到实际玩家位置的方向
+                player_x = player.x + player.width // 2
+                player_y = player.y + player.height // 2
                 # 计算到玩家的方向
                 dx = player_x - self.x
                 dy = player_y - self.y
@@ -2081,7 +2071,7 @@ class Game:
                     self.explosions.append(Explosion(explosion_x, explosion_y, missile.explosion_radius//2, is_missile=True))
         
         for bullet in self.enemy_bullets[:]:
-            bullet.update()
+            bullet.update(self.player)
             if (bullet.x < 0 or bullet.x > WIDTH or bullet.y < 0 or bullet.y > HEIGHT):
                 self.enemy_bullets.remove(bullet)
             else:
